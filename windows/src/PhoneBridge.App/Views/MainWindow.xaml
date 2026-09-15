@@ -124,7 +124,17 @@
                             <TextBlock Style="{StaticResource Label}" Text="Mute" />
                             <ToggleButton x:Name="MuteToggle" HorizontalAlignment="Right" Click="OnMuteToggle" />
                         </Grid>
-                        <TextBlock x:Name="MicDetail" Style="{StaticResource Subtle}" />
+                        <TextBlock x:Name="MicDetail" Style="{StaticResource Subtle}" Margin="0,0,0,8" />
+
+                        <!-- Reflects raw PCM received from the phone, independent of VB-Cable -
+                             proves the transport is working even when nothing downstream
+                             (VB-Cable, the browser) can pick the mic up yet. -->
+                        <Border Background="#FF05070B" CornerRadius="6" Height="48"
+                                SizeChanged="OnMicWaveformSizeChanged">
+                            <Canvas x:Name="MicWaveform" ClipToBounds="True" />
+                        </Border>
+                        <TextBlock x:Name="MicWaveformLabel" Style="{StaticResource Subtle}" Margin="0,4,0,0"
+                                   Text="Waveform of audio arriving from the phone" />
                     </StackPanel>
                 </Border>
 

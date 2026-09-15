@@ -39,6 +39,15 @@ public sealed class BridgeSession : IAsyncDisposable
 
     private int _vcamWidth, _vcamHeight;
 
+    // ---- mic level meter -----------------------------------------------------
+    // Independent of VirtualMicWriter/VB-Cable: this reflects what arrived over the wire
+    // from the phone, so it can prove "the PC is receiving audio" even when VB-Cable is
+    // not installed and nothing downstream (browser, Zoom) can pick the mic up yet.
+    private const int MicLevelRingSize = 256;
+    private readonly float[] _micLevelRing = new float[MicLevelRingSize];
+    private readonly object _micLevelLock = new();
+    private int _micLevelWritePos;
+
     public SessionStatus Status { get; private set; } = SessionStatus.NoDevice;
     public string? StatusDetail { get; private set; }
     public DeviceState Device { get; private set; } = new();
@@ -157,6 +166,7 @@ public sealed class BridgeSession : IAsyncDisposable
         _decoder?.Dispose();
         _decoder = null;
         _mic.Stop();
+        ClearMicLevels();
 
         await _tunnel.RemoveAllAsync().ConfigureAwait(false);
 
@@ -413,14 +423,17 @@ public sealed class BridgeSession : IAsyncDisposable
             var error = _mic.Start(header.SampleRate, header.Channels);
             if (error is not null)
             {
+                // Not fatal to the loop: the level meter below still proves audio is
+                // arriving from the phone even when VB-Cable can't take it, which is
+                // exactly the distinction that matters when diagnosing "no mic in Zoom".
                 Log?.Invoke($"virtual mic unavailable: {error}");
-                return;
             }
 
             while (!ct.IsCancellationRequested)
             {
                 var packet = await reader.ReadPacketAsync(ct).ConfigureAwait(false);
                 if (packet is null) continue;
+                PushMicLevel(packet.Value.Payload);
                 _mic.Write(packet.Value.Payload, 0, packet.Value.Payload.Length);
             }
         }
@@ -432,7 +445,61 @@ public sealed class BridgeSession : IAsyncDisposable
         finally
         {
             _mic.Stop();
+            ClearMicLevels();
         }
+    }
+
+    /// <summary>
+    /// Peak amplitude of one PCM S16LE chunk, normalised to 0..1, pushed into a small
+    /// ring buffer the UI polls to draw a waveform. Cheap enough to run on every 10ms
+    /// chunk (a single pass over ~a thousand samples) and independent of whether
+    /// VirtualMicWriter could open VB-Cable, so it proves receipt from the phone even
+    /// when nothing downstream can consume the audio yet.
+    /// </summary>
+    private void PushMicLevel(byte[] pcm)
+    {
+        short peak = 0;
+        for (var i = 0; i + 1 < pcm.Length; i += 2)
+        {
+            var sample = (short)(pcm[i] | (pcm[i + 1] << 8));
+            var abs = sample < 0 ? (short)-sample : sample;
+            if (abs > peak) peak = abs;
+        }
+        var level = peak / 32768f;
+
+        lock (_micLevelLock)
+        {
+            _micLevelRing[_micLevelWritePos] = level;
+            _micLevelWritePos = (_micLevelWritePos + 1) % MicLevelRingSize;
+        }
+    }
+
+    private void ClearMicLevels()
+    {
+        lock (_micLevelLock)
+        {
+            Array.Clear(_micLevelRing);
+            _micLevelWritePos = 0;
+        }
+    }
+
+    /// <summary>
+    /// Snapshot of the most recent levels, oldest first, for the UI to draw. Never blocks
+    /// the audio thread for more than the copy itself.
+    /// </summary>
+    public float[] GetRecentMicLevels(int count)
+    {
+        count = Math.Min(count, MicLevelRingSize);
+        var result = new float[count];
+        lock (_micLevelLock)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                var idx = (_micLevelWritePos - count + i + MicLevelRingSize * 2) % MicLevelRingSize;
+                result[i] = _micLevelRing[idx];
+            }
+        }
+        return result;
     }
 
     // ---- virtual camera device ---------------------------------------------

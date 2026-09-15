@@ -131,7 +131,7 @@ public sealed partial class WifiController
             if (tokens.Length < 2) continue;
             if (!int.TryParse(tokens[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)) continue;
 
-            var security = tokens[^1];
+            var security = tokens[^1].TrimEnd('^');
             var ssid = string.Join(' ', tokens[1..^1]).Trim();
             if (ssid.Length == 0)
             {
@@ -142,7 +142,19 @@ public sealed partial class WifiController
 
             list.Add(new SavedNetwork { NetworkId = id, Ssid = ssid, Security = security });
         }
-        return list;
+
+        // Android 13 Mainline prints one row per security type of the same networkId
+        // (wpa2-psk plus wpa3-sae^, or open plus owe^). Collapse so the UI lists each
+        // saved network once.
+        return list
+            .GroupBy(n => n.NetworkId)
+            .Select(g =>
+            {
+                var first = g.First();
+                var securities = g.Select(n => n.Security).Where(s => s.Length > 0).Distinct();
+                return first with { Security = string.Join('/', securities) };
+            })
+            .ToList();
     }
 
     /// <summary>
@@ -295,8 +307,12 @@ public sealed partial class WifiController
     /// <summary>
     /// BSSID, frequency, RSSI, optional age, SSID, then flags in brackets. The SSID is
     /// non-greedy up to the first bracketed flag group, which is what allows spaces in it.
+    ///
+    /// Android 13 / MIUI 14 prints RSSI as <c>-78(0:-78)</c> (per-chain in parentheses)
+    /// with no space before the '('. AOSP 12 parsers that expected a bare integer miss
+    /// every row; the optional group is from the spike against this device.
     /// </summary>
-    [GeneratedRegex(@"^(?<bssid>[0-9a-f:]{17})\s+(?<freq>\d+)\s+(?<rssi>-?\d+)\s+(?:[\d.]+\s+)?(?<ssid>.*?)\s*(?<flags>\[.*\])?\s*$",
+    [GeneratedRegex(@"^(?<bssid>[0-9a-f:]{17})\s+(?<freq>\d+)\s+(?<rssi>-?\d+)(?:\([^)]*\))?\s+(?:[\d.]+\s+)?(?<ssid>.*?)\s*(?<flags>\[.*\])?\s*$",
         RegexOptions.IgnoreCase)]
     private static partial Regex ScanLineRegex();
 }

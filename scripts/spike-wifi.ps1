@@ -55,7 +55,12 @@ function Invoke-Adb {
 
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $adb
-    foreach ($a in ($serialArgs + $Arguments)) { [void]$psi.ArgumentList.Add($a) }
+    # Windows PowerShell 5.1 runs on .NET Framework, where ArgumentList is null.
+    # Join tokens into Arguments; quote anything with whitespace.
+    $allArgs = @($serialArgs) + @($Arguments)
+    $psi.Arguments = ($allArgs | ForEach-Object {
+        if ($_ -match '[\s"]') { '"' + ($_ -replace '"', '\"') + '"' } else { $_ }
+    }) -join ' '
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError  = $true
     $psi.UseShellExecute = $false

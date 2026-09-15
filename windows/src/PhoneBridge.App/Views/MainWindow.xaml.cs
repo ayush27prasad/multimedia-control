@@ -1,8 +1,11 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 using PhoneBridge.Adb;
 using PhoneBridge.Core.Protocol;
@@ -32,12 +35,20 @@ public partial class MainWindow : Window
     private DateTime _lastFpsSample = DateTime.UtcNow;
     private double _measuredFps;
 
+    // ---- mic waveform --------------------------------------------------------
+    private const int WaveformBarCount = 40;
+    private readonly DispatcherTimer _waveformTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
+    private readonly List<Rectangle> _waveformBars = new();
+
     public MainWindow()
     {
         InitializeComponent();
         NetworkList.ItemsSource = _networks;
         Loaded += OnLoaded;
         Closed += OnClosed;
+
+        _waveformTimer.Tick += (_, _) => RedrawMicWaveform();
+        BuildMicWaveformBars();
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -64,18 +75,84 @@ public partial class MainWindow : Window
         {
             AppendLog("VB-Cable not detected - the virtual microphone will be unavailable. " +
                       "Windows has no user-mode way to create one; install from https://vb-audio.com/Cable/");
+            MicWaveformLabel.Text = "Waveform of audio arriving from the phone " +
+                                     "(VB-Cable not installed - Zoom/the browser can't use it as a mic yet)";
         }
         if (!VirtualCameraHost.IsSupported())
         {
             AppendLog("Windows 11 build 22000+ required for the virtual camera. Preview still works.");
         }
 
+        _waveformTimer.Start();
         await _session.StartAsync();
     }
 
     private async void OnClosed(object? sender, EventArgs e)
     {
+        _waveformTimer.Stop();
         if (_session is not null) await _session.DisposeAsync();
+    }
+
+    // ---- mic waveform --------------------------------------------------------
+
+    /// <summary>Creates the fixed set of bars once; <see cref="OnMicWaveformSizeChanged"/> lays them out.</summary>
+    private void BuildMicWaveformBars()
+    {
+        MicWaveform.Children.Clear();
+        _waveformBars.Clear();
+        for (var i = 0; i < WaveformBarCount; i++)
+        {
+            var bar = new Rectangle
+            {
+                Fill = (Brush)FindResource("Success"),
+                RadiusX = 1,
+                RadiusY = 1
+            };
+            _waveformBars.Add(bar);
+            MicWaveform.Children.Add(bar);
+        }
+    }
+
+    private void OnMicWaveformSizeChanged(object sender, SizeChangedEventArgs e) => LayOutMicWaveformBars();
+
+    private void LayOutMicWaveformBars()
+    {
+        var width = MicWaveform.ActualWidth;
+        var height = MicWaveform.ActualHeight;
+        if (width <= 0 || height <= 0 || _waveformBars.Count == 0) return;
+
+        var slot = width / WaveformBarCount;
+        var barWidth = Math.Max(1, slot - 2);
+
+        for (var i = 0; i < _waveformBars.Count; i++)
+        {
+            var bar = _waveformBars[i];
+            bar.Width = barWidth;
+            Canvas.SetLeft(bar, i * slot);
+        }
+    }
+
+    /// <summary>
+    /// Polled from the session's mic-level ring buffer rather than driven by an event per
+    /// audio packet (~100/s) - this decouples the audio thread entirely from UI redraw
+    /// cost and matches the FPS counter's existing polling style.
+    /// </summary>
+    private void RedrawMicWaveform()
+    {
+        if (_session is null || _waveformBars.Count == 0) return;
+        if (MicWaveform.ActualWidth <= 0) return;
+
+        var height = MicWaveform.ActualHeight;
+        var levels = _session.GetRecentMicLevels(WaveformBarCount);
+
+        for (var i = 0; i < _waveformBars.Count && i < levels.Length; i++)
+        {
+            // Floor of 2px so silence still reads as "a flat line", not "nothing is here".
+            var barHeight = Math.Max(2, levels[i] * height);
+            var bar = _waveformBars[i];
+            bar.Height = barHeight;
+            Canvas.SetTop(bar, (height - barHeight) / 2);
+        }
     }
 
     // ---- rendering ---------------------------------------------------------

@@ -1,7 +1,9 @@
 using Sdcb.FFmpeg.Codecs;
+using Sdcb.FFmpeg.Common;
 using Sdcb.FFmpeg.Raw;
 using Sdcb.FFmpeg.Swscales;
 using Sdcb.FFmpeg.Utils;
+using static Sdcb.FFmpeg.Raw.ffmpeg;
 
 namespace PhoneBridge.Media.Video;
 
@@ -28,16 +30,17 @@ public sealed class FFmpegH264Decoder : IVideoDecoder
 
     public FFmpegH264Decoder()
     {
-        var decoder = Codec.FindDecoderById(AVCodecID.H264)
-            ?? throw new InvalidOperationException("FFmpeg has no H.264 decoder available");
+        // FindDecoderById returns Codec (a struct), not Codec? — it throws if missing.
+        var decoder = Codec.FindDecoderById(AVCodecID.H264);
 
         _codec = new CodecContext(decoder)
         {
             Flags = AV_CODEC_FLAG.LowDelay,
             ThreadCount = Math.Min(Environment.ProcessorCount, 4),
-            // Slice threading parallelises WITHIN a frame. Frame threading would pipeline
-            // across frames and add latency proportional to the thread count.
-            ThreadType = FF_THREAD.Slice
+            // Slice threading parallelises WITHIN a frame. Frame threading (1) would
+            // pipeline across frames and add latency proportional to the thread count.
+            // FF_THREAD_SLICE is a C #define (value 2) that this binding does not emit.
+            ThreadType = 2
         };
         _codec.Open(decoder);
     }
@@ -93,7 +96,7 @@ public sealed class FFmpegH264Decoder : IVideoDecoder
             _bufferHeight = height;
         }
 
-        _converter.ConvertFrame(source, _bgraFrame!);
+        _converter.ConvertFrame(source, _bgraFrame!, SWS.FastBilinear);
 
         unsafe
         {
@@ -117,7 +120,11 @@ public sealed class FFmpegH264Decoder : IVideoDecoder
 
     public void Flush()
     {
-        try { _codec.FlushBuffers(); } catch { /* nothing decoded yet */ }
+        unsafe
+        {
+            try { avcodec_flush_buffers(_codec); }
+            catch { /* nothing decoded yet */ }
+        }
     }
 
     public void Dispose()
