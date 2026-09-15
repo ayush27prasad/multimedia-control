@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneBridge</string>
+    <string name="channel_bridge_name">Bridge</string>
+    <string name="channel_bridge_desc">Keeps the USB link to the PC alive while streaming.</string>
+</resources>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PhoneBridge.Core\PhoneBridge.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- H.264 decode. The .runtime package carries the native binaries; without it the
+         managed package throws at first use with a DllNotFoundException. -->
+    <PackageReference Include="Sdcb.FFmpeg" Version="6.0.*" />
+    <PackageReference Include="Sdcb.FFmpeg.runtime.windows-x64" Version="6.0.*" />
+
+    <!-- WASAPI render into VB-Cable's "CABLE Input" endpoint. -->
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,63 @@
+# ---- .NET ------------------------------------------------------------------
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+*.userprefs
+.vs/
+*.cache
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ---- Android / Gradle ------------------------------------------------------
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+output.json
+
+# NOTE: gradle/wrapper/gradle-wrapper.jar is NOT ignored. It is missing because it is a
+# binary and could not be produced on the authoring machine. Generate it once with
+# `gradle wrapper --gradle-version 8.9` and COMMIT it - that is what lets the repo build
+# without a preinstalled Gradle.
+
+# ---- C++ (native virtual camera) -------------------------------------------
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.dll
+*.tlog
+*.idb
+
+# ---- Bundled tooling -------------------------------------------------------
+# Fetched by scripts/setup-windows.ps1 rather than committed (~15MB, and the version
+# should track whatever Google currently ships).
+/windows/tools/adb/
+
+# ---- Local runtime artefacts -----------------------------------------------
+crash.log
+*.log
+
+# NOTE: wifi-capability-report.md is deliberately NOT ignored. It is the output of the M0
+# spike and the most valuable artefact to carry between build sessions - it converts
+# assumptions about MIUI 14 into verified facts. Commit it once generated.
+
+# ---- OS --------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini

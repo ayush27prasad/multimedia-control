@@ -1,0 +1,195 @@
+<Window x:Class="PhoneBridge.App.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PhoneBridge" Height="820" Width="1180"
+        MinHeight="620" MinWidth="960"
+        Background="{StaticResource Background}"
+        TextOptions.TextFormattingMode="Display">
+
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="420" />
+            <ColumnDefinition Width="400" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Link status -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource SectionCard}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Ellipse x:Name="StatusDot" Grid.Column="0" Width="10" Height="10"
+                         Fill="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,12,0" />
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock x:Name="StatusText" Style="{StaticResource Label}"
+                               FontSize="15" FontWeight="SemiBold" Text="Looking for a device..." />
+                    <TextBlock x:Name="StatusDetail" Style="{StaticResource Subtle}" Margin="0,3,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <TextBlock x:Name="DeviceText" Style="{StaticResource Metric}"
+                               VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <Button x:Name="ReconnectButton" Content="Reconnect" Click="OnReconnectClick" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Preview -->
+        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SectionCard}" Margin="0,0,12,12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Style="{StaticResource SectionTitle}" Text="PREVIEW" />
+
+                <Border Grid.Row="1" Background="#FF05070B" CornerRadius="8">
+                    <Grid>
+                        <Image x:Name="PreviewImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <TextBlock x:Name="PreviewPlaceholder" Style="{StaticResource Subtle}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Text="No video.&#x0a;Start the camera from either app." />
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+                    <TextBlock x:Name="PreviewStats" Style="{StaticResource Metric}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Controls -->
+        <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,12">
+            <StackPanel>
+
+                <Border Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="CAMERA" />
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Style="{StaticResource Label}" Text="Stream to PC" />
+                            <ToggleButton x:Name="CameraToggle" HorizontalAlignment="Right"
+                                          Click="OnCameraToggle" />
+                        </Grid>
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Style="{StaticResource Label}" Text="Source" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button x:Name="RearButton" Content="Rear" Click="OnFacingClick" Tag="back" Margin="0,0,6,0" />
+                                <Button x:Name="FrontButton" Content="Front" Click="OnFacingClick" Tag="front" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Style="{StaticResource Label}" Text="Quality" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="720p" Click="OnQualityClick" Tag="720" Margin="0,0,6,0" />
+                                <Button Content="1080p" Click="OnQualityClick" Tag="1080" />
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock x:Name="CameraDetail" Style="{StaticResource Subtle}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="VIRTUAL CAMERA" />
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Style="{StaticResource Label}" Text="Expose as webcam" />
+                            <ToggleButton x:Name="VCamToggle" HorizontalAlignment="Right" Click="OnVCamToggle" />
+                        </Grid>
+                        <TextBlock x:Name="VCamDetail" Style="{StaticResource Subtle}"
+                                   Text="Makes the stream visible to Zoom, Teams, Chrome and OBS." />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="MICROPHONE" />
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Style="{StaticResource Label}" Text="Stream to PC" />
+                            <ToggleButton x:Name="MicToggle" HorizontalAlignment="Right" Click="OnMicToggle" />
+                        </Grid>
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Style="{StaticResource Label}" Text="Mute" />
+                            <ToggleButton x:Name="MuteToggle" HorizontalAlignment="Right" Click="OnMuteToggle" />
+                        </Grid>
+                        <TextBlock x:Name="MicDetail" Style="{StaticResource Subtle}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="WI-FI" />
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Style="{StaticResource Label}" Text="Wi-Fi radio" />
+                            <ToggleButton x:Name="WifiToggle" HorizontalAlignment="Right" Click="OnWifiToggle" />
+                        </Grid>
+                        <TextBlock x:Name="WifiCurrent" Style="{StaticResource Metric}" Margin="0,0,0,8" />
+                        <ItemsControl x:Name="NetworkList" Margin="0,0,0,8">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,2">
+                                        <TextBlock Text="{Binding Ssid}" Style="{StaticResource Label}" FontSize="12" />
+                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource Metric}"
+                                                   HorizontalAlignment="Right" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="Refresh" Click="OnWifiRefreshClick" Margin="0,0,6,0" />
+                            <Button Content="Scan" Click="OnWifiScanClick" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Subtle}"
+                                   Text="Connecting is done by tapping the network on the phone. ADB can list saved networks and toggle the radio, but cannot join a saved network without its password." />
+                        <TextBlock x:Name="WifiError" Style="{StaticResource Subtle}"
+                                   Foreground="{StaticResource Danger}" Margin="0,8,0,0" Visibility="Collapsed" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCard}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="USB TETHERING" />
+                        <TextBlock x:Name="TetherStatus" Style="{StaticResource Label}" Margin="0,0,0,10"
+                                   Text="Not active" />
+                        <Button Content="Open tethering settings on phone" Click="OnTetherClick"
+                                HorizontalAlignment="Left" />
+                        <TextBlock Style="{StaticResource Subtle}" Margin="0,8,0,0"
+                                   Text="Android does not let apps switch tethering on, so this opens the system page on the phone." />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Log -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Style="{StaticResource SectionCard}" Margin="0" Padding="12">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="110" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <TextBlock Style="{StaticResource SectionTitle}" Text="LOG" Margin="0,0,0,6" />
+                    <Button Content="Copy diagnostics" Click="OnCopyDiagnosticsClick"
+                            HorizontalAlignment="Right" Padding="10,4" />
+                </Grid>
+                <ScrollViewer x:Name="LogScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <TextBlock x:Name="LogText" Style="{StaticResource Metric}"
+                               FontSize="11" TextWrapping="NoWrap" />
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

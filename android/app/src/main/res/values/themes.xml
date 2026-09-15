@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark by default (FR13). Compose paints the real surfaces; this exists so the
+         window background matches before the first frame, avoiding a white flash. -->
+    <style name="Theme.PhoneBridge" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0B0E14</item>
+        <item name="android:statusBarColor">#0B0E14</item>
+        <item name="android:navigationBarColor">#0B0E14</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

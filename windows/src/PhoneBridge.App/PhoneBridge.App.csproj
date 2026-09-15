@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>PhoneBridge</AssemblyName>
+    <RootNamespace>PhoneBridge.App</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PhoneBridge.Core\PhoneBridge.Core.csproj" />
+    <ProjectReference Include="..\PhoneBridge.Adb\PhoneBridge.Adb.csproj" />
+    <ProjectReference Include="..\PhoneBridge.Media\PhoneBridge.Media.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ship adb next to the exe so the app uses a known version on its private port,
+         independent of whatever the user has installed (DECISIONS.md D9). -->
+    <Content Include="..\..\tools\adb\**\*.*" Link="adb\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\tools\adb')" />
+  </ItemGroup>
+</Project>
